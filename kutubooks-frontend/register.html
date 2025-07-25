@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Register - Kutubooks</title>
+  <!--outside css-->
+  <link rel="stylesheet" href="styles.css" />
+  <!--built in css-->
+  <style>
+    :root {
+      --white: #ffffff;
+      --green: #2ecc71;
+      --dark: #1e1e1e;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--white);
+      color: var(--dark);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    header {
+      background-color: var(--dark);
+      color: var(--white);
+      padding: 1rem;
+    }
+
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    nav h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      color: var(--green);
+    }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: 1rem;
+      margin: 0;
+      padding: 0;
+    }
+
+    nav a {
+      color: var(--white);
+      text-decoration: none;
+      font-weight: bold;
+      transition: color 0.3s;
+    }
+
+    nav a:hover {
+      color: var(--green);
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
+    }
+
+    .form-section {
+      width: 100%;
+      max-width: 400px;
+      background-color: #f9f9f9;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-section h2 {
+      text-align: center;
+      color: var(--dark);
+      margin-bottom: 1.5rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: var(--dark);
+      font-weight: 500;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.7rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 1rem;
+    }
+
+    button {
+      width: 100%;
+      padding: 0.8rem;
+      background-color: var(--green);
+      color: var(--white);
+      border: none;
+      border-radius: 5px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #27ae60;
+    }
+
+    .message {
+      margin-top: 1rem;
+      text-align: center;
+      color: red;
+    }
+
+    footer {
+      background-color: var(--dark);
+      color: var(--white);
+      text-align: center;
+      padding: 1rem;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 480px) {
+      nav ul {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .form-section {
+        margin-top: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <nav>
+      <h1>Kutubooks</h1>
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="login.html">Login</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <section class="form-section">
+      <h2>Register</h2>
+      <form id="register-form">
+        <label>Name</label>
+        <input type="text" id="name" required />
+
+        <label>Email</label>
+        <input type="email" id="email" required />
+
+        <label>Password</label>
+        <input type="password" id="password" required />
+
+        <button type="submit">Register</button>
+      </form>
+      <p id="register-message" class="message"></p>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Kutubooks</p>
+  </footer>
+  <script src="app.js"></script>
+  <script>
+  document.getElementById('register-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    // Get input values and trim whitespace
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value.trim();
+
+    try {
+      // Call your backend register endpoint
+      const res = await fetch('http://localhost:3000/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        // Save the JWT token and email to localStorage for auth & personalization
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('email', email);
+
+        // Redirect to stories page after successful registration
+        window.location.href = 'stories.html';
+      } else {
+        // Show error message from backend or default error
+        document.getElementById('register-message').textContent = data.error || 'Registration failed';
+      }
+    } catch (err) {
+      // Show network error message
+      document.getElementById('register-message').textContent = 'Network error. Please try again.';
+    }
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Stories | Kutubooks</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    nav {
+      background-color: #333;
+      padding: 1rem;
+      color: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    nav h1 {
+      margin: 0;
+    }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: 1rem;
+    }
+
+    nav ul li a {
+      color: white;
+      text-decoration: none;
+    }
+
+    main {
+      padding: 2rem;
+    }
+
+    .story {
+      background-color: #f4f4f4;
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      border-radius: 5px;
+    }
+
+    .story select, .story button {
+      margin-top: 0.5rem;
+    }
+
+    footer {
+      background-color: #222;
+      color: white;
+      text-align: center;
+      padding: 1rem;
+      margin-top: 2rem;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <nav>
+      <h1>Kutubooks</h1>
+      <ul id="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="upload.html" id="submit-story-link" style="display:none;">Submit Story</a></li>
+        <li><a href="#" id="logout-btn">Logout</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <section>
+      <h2>Stories</h2>
+      <div id="stories-list">
+        <!-- Stories will load here -->
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Kutubooks</p>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        window.location.href = 'login.html';
+      } else {
+        document.getElementById('submit-story-link').style.display = 'inline';
+        loadStories();
+      }
+    });
+
+    async function loadStories() {
+      const container = document.getElementById('stories-list');
+      container.textContent = 'Loading stories...';
+      try {
+        const res = await fetch('http://localhost:3000/stories', {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        });
+
+        if (res.status === 401) {
+          alert('Session expired. Please login again.');
+          localStorage.clear();
+          window.location.href = 'login.html';
+          return;
+        }
+
+        const stories = await res.json();
+        container.innerHTML = '';
+
+        if (stories.length === 0) {
+          container.textContent = 'No stories found.';
+          return;
+        }
+
+        stories.forEach((story, index) => {
+          const div = document.createElement('div');
+          div.classList.add('story');
+          div.innerHTML = `
+            <h3>${story.title}</h3>
+            <p><strong>Language:</strong> ${story.language}</p>
+            <p id="content-${index}">${story.content.substring(0, 200)}...</p>
+
+            <select id="lang-select-${index}">
+              <option value="" disabled selected>Select target language</option>
+              <option value="en">English</option>
+              <option value="fr">French</option>
+              <option value="rw">Kinyarwanda</option>
+            </select>
+            <button onclick="translateStory('${story.content}', ${index})">Translate</button>
+            <p id="translated-${index}" style="margin-top: 0.5rem; font-style: italic;"></p>
+          `;
+          container.appendChild(div);
+        });
+      } catch (err) {
+        console.error(err);
+        container.textContent = 'Failed to load stories.';
+      }
+    }
+
+    async function translateStory(content, index) {
+      const select = document.getElementById(`lang-select-${index}`);
+      const targetLang = select.value;
+      if (!targetLang) return alert('Please select a language');
+
+      const translatedEl = document.getElementById(`translated-${index}`);
+      translatedEl.textContent = 'Translating...';
+
+      try {
+        const res = await fetch("https://libretranslate.com/translate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            q: content,
+            source: "auto",
+            target: targetLang,
+            format: "text"
+          })
+        });
+
+        const data = await res.json();
+        translatedEl.textContent = data.translatedText;
+      } catch (error) {
+        console.error(error);
+        translatedEl.textContent = "Translation failed.";
+      }
+    }
+
+    document.getElementById('logout-btn').addEventListener('click', () => {
+      localStorage.clear();
+      window.location.href = 'index.html';
+    });
+  </script>
+</body>
+</html>

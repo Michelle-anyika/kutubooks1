@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kutubooks - African Cultural Storytelling</title>
+  <!--outside css-->
+  <link rel="stylesheet" href="styles.css" />  
+  <!--built in css-->
+  <style>
+    /* Root & Reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: #ffffff;
+      color: #000;
+      line-height: 1.6;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    a {
+      text-decoration: none;
+      color: #fff;
+    }
+
+    ul {
+      list-style: none;
+    }
+
+    /* Header */
+    header {
+      background-color: #006400; /* Dark green */
+      padding: 1rem 2rem;
+    }
+
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    nav h1 {
+      color: #fff;
+      font-size: 1.8rem;
+    }
+
+    #nav-links {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    #nav-links li {
+      background: #000;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      transition: background 0.3s ease;
+    }
+
+    #nav-links li:hover {
+      background: #008000; /* Lighter green */
+    }
+
+    /* Main Content */
+    main {
+      flex: 1;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .hero {
+      margin-bottom: 2rem;
+    }
+
+    .hero h2 {
+      color: #006400;
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    .hero p {
+      margin-bottom: 0.7rem;
+      font-size: 1rem;
+    }
+
+    img {
+      margin-top: 1rem;
+      max-width: 100%;
+      height: auto;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0, 100, 0, 0.3);
+    }
+
+    /* Search Bar */
+    .search-bar {
+      display: flex;
+      justify-content: center;
+      margin: 1rem 0;
+    }
+
+    .search-bar input[type="text"] {
+      width: 60%;
+      max-width: 500px;
+      padding: 0.6rem 1rem;
+      border: 2px solid #006400;
+      border-radius: 8px 0 0 8px;
+      outline: none;
+    }
+
+    .search-bar button {
+      padding: 0.6rem 1rem;
+      background-color: #006400;
+      color: #fff;
+      border: none;
+      border-radius: 0 8px 8px 0;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .search-bar button:hover {
+      background-color: #008000;
+    }
+
+    /* Footer */
+    footer {
+      background-color: #000;
+      color: #fff;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      nav {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      #nav-links {
+        justify-content: flex-start;
+        width: 100%;
+      }
+
+      .search-bar {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .search-bar input[type="text"], 
+      .search-bar button {
+        width: 100%;
+        border-radius: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <nav>
+      <h1>Kutubooks</h1>
+      <ul id="nav-links">
+        <li><a href="login.html">Login</a></li>
+        <li><a href="register.html">Register</a></li>
+        <li><a href="stories.html">Browse Stories</a></li>
+        <li><a href="upload.html" id="submit-story-link" style="display:none;">Submit Story</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+  <section class="hero">
+    <h2>Preserving and Sharing African Stories</h2>
+    <p>Welcome to Kutubooks — your home for African cultural stories, proverbs, and folktales.</p>
+    <p>Login or register to start reading, sharing, and celebrating our heritage.</p>
+    <p>Share your story, your experience, your threats, we are here to understand you, heal you and learn from your experience</p>
+  </section>
+
+  <!-- Search bar -->
+  <div class="search-bar">
+    <input type="text" placeholder="Search for a story..." id="searchInput" />
+    <button onclick="searchStory()">Search</button>
+  </div>
+
+  <!-- Container to load stories dynamically -->
+  <div id="stories-container"></div>
+
+  <img src="culture.png" alt="African" width="300">
+</main>
+
+<footer>
+  <p>&copy; 2025 Kutubooks | Cultural Storytelling for Africa</p>
+</footer>
+
+<script src="app.js"></script>
+<script>
+  function searchStory() {
+    const query = document.getElementById('searchInput').value.toLowerCase();
+    if (query) {
+      window.location.href = `stories.html?search=${encodeURIComponent(query)}`;
+    }
+  }
+
+  async function loadStories() {
+    try {
+      const response = await fetch("http://localhost:3000/stories"); // Use your correct backend URL here
+      const stories = await response.json();
+
+      const container = document.getElementById("stories-container");
+      container.innerHTML = "";
+
+      stories.forEach(story => {
+        const div = document.createElement("div");
+        div.className = "story";
+        div.innerHTML = `<h3>${story.title}</h3><p>${story.content}</p>`;
+        container.appendChild(div);
+      });
+
+    } catch (error) {
+      console.error("Error loading stories:", error);
+      const container = document.getElementById("stories-container");
+      container.textContent = "Failed to load stories.";
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", loadStories);
+</script>
+
+</body>
+</html>
