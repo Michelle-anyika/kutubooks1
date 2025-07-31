@@ -1,6 +1,8 @@
 # Kutubooks - African Cultural Storytelling Platform
 
 A web application for preserving and sharing African cultural stories, proverbs, and folktales with translation capabilities.
+this is the link to youtube video explaining how application works anf how it is functioning and also its purpose.
+https://youtu.be/EglitUXcrEA
 
 ## Features
 
@@ -15,7 +17,7 @@ A web application for preserving and sharing African cultural stories, proverbs,
 ## APIs Used
 
 - **MyMemory Translation API**: https://mymemory.translated.net/
-  - Used for translating stories between languages
+  - Used for translating stories between languages (English, Kinyarwanda, French)
   - No API key required
   - Rate limit: 1000 requests/day
 
@@ -35,18 +37,10 @@ node index.js
 Access at: http://localhost:3000
 
 ## Docker Deployment
-
 ### Quick Deployment Scripts
-
 **Windows:**
 ```cmd
 deploy.bat michelleanyika
-```
-
-**Linux/Mac:**
-```bash
-chmod +x deploy.sh
-./deploy.sh michelleanyika
 ```
 
 ### Manual Three-Lab Setup Deployment
@@ -65,16 +59,12 @@ docker push michelleanyika/kutubooks:latest
 docker pull michelleanyika/kutubooks:latest
 docker stop kutubooks 2>/dev/null || true
 docker rm kutubooks 2>/dev/null || true
-docker run -d --name kutubooks -p 8080:8080 \
-  -e JWT_SECRET=kutubooks_jwt_secret_2025 \
-  -e JWT_EXPIRES_IN=24h \
-  --restart unless-stopped \
-  michelleanyika/kutubooks:latest
+docker run -d --name kutubooks -p 8080:8080 
 ```
 
 #### 3. Configure Nginx Load Balancer (Lb01)
 ```bash
-# Install nginx if needed
+# Install nginx
 sudo apt update && sudo apt install nginx -y
 
 # Copy configuration
@@ -101,7 +91,7 @@ for i in {1..10}; do curl -s http://lb01 | grep -o "Server.*"; done
 
 ## Security Features
 
-- JWT authentication for protected routes
+- JWT authentication for protected routes but restricted to some parts.
 - User ownership verification for CRUD operations
 - Input validation and sanitization
 - Environment variables for sensitive data
