@@ -176,7 +176,7 @@
   <footer>
     <p>&copy; 2025 Kutubooks</p>
   </footer>
-  <script src="app.js"></script>
+
   <script>
   document.getElementById('register-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -187,7 +187,7 @@
     const password = document.getElementById('password').value.trim();
 
     try {
-      // Call your backend register endpoint
+      // Call  backend register endpoint
       const res = await fetch('http://localhost:3000/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -197,9 +197,10 @@
       const data = await res.json();
 
       if (res.ok) {
-        // Save the JWT token and email to localStorage for auth & personalization
+        // Save the JWT token, email and user ID to localStorage for auth & personalization
         localStorage.setItem('token', data.token);
         localStorage.setItem('email', email);
+        localStorage.setItem('userId', data.userId);
 
         // Redirect to stories page after successful registration
         window.location.href = 'stories.html';

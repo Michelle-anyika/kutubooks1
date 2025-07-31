@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Stories | Kutubooks</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #fafafa 0%, #f0f0f0 100%);
+      color: #1a1a1a;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    nav {
+      background: linear-gradient(135deg, #2d5a2d 0%, #3d6b3d 100%);
+      padding: 1.5rem 2rem;
+      color: #fff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 15px rgba(45, 90, 45, 0.3);
+    }
+
+    nav h1 {
+      margin: 0;
+      font-size: 2rem;
+      font-weight: bold;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: 1rem;
+    }
+
+    nav ul li a {
+      color: white;
+      text-decoration: none;
+      padding: 0.7rem 1.2rem;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 25px;
+      transition: all 0.3s ease;
+      font-weight: 500;
+    }
+
+    nav ul li a:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    main {
+      padding: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    main h2 {
+      color: #2d5a2d;
+      text-align: center;
+      margin-bottom: 2rem;
+      font-size: 2.5rem;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+    }
+
+    .story {
+      background: linear-gradient(145deg, #ffffff 0%, #f9f9f9 100%);
+      margin-bottom: 2rem;
+      padding: 2rem;
+      border-radius: 15px;
+      box-shadow: 0 8px 25px rgba(45, 90, 45, 0.1);
+      border: 1px solid rgba(45, 90, 45, 0.1);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .story::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, #2d5a2d, #3d6b3d, #4d7b4d);
+    }
+
+    .story:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 35px rgba(45, 90, 45, 0.2);
+    }
+
+    .story h3 {
+      color: #2d5a2d;
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+      border-bottom: 2px solid #e8e8e8;
+      padding-bottom: 0.5rem;
+    }
+
+    .story p {
+      color: #333;
+      margin-bottom: 1rem;
+      line-height: 1.7;
+    }
+
+    .story button {
+      margin: 0.2rem;
+      padding: 0.4rem 0.8rem;
+      border: none;
+      border-radius: 15px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      font-size: 0.75rem;
+      letter-spacing: 0.3px;
+    }
+
+    .story button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .story select {
+      margin: 0.3rem;
+      padding: 0.4rem 0.8rem;
+      border: 2px solid #2d5a2d;
+      border-radius: 8px;
+      background: white;
+      color: #2d5a2d;
+      font-weight: 500;
+      font-size: 0.85rem;
+    }
+
+    .story input[type="text"] {
+      border: 2px solid #e8f5e8;
+      border-radius: 10px;
+      padding: 0.7rem;
+      transition: all 0.3s ease;
+    }
+
+    .story input[type="text"]:focus {
+      border-color: #2d5a2d;
+      outline: none;
+      box-shadow: 0 0 10px rgba(45, 90, 45, 0.2);
+    }
+
+    #comments-${index} {
+      background: rgba(45, 90, 45, 0.05);
+      border-radius: 10px;
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+
+    #comments-${index} h4 {
+      color: #2d5a2d;
+      margin-bottom: 1rem;
+      font-size: 1.2rem;
+    }
+
+    #comments-${index} > div {
+      background: white !important;
+      border: 1px solid #e8e8e8 !important;
+      border-left: 4px solid #2d5a2d !important;
+      margin: 0.8rem 0 !important;
+      padding: 1rem !important;
+      border-radius: 8px !important;
+      box-shadow: 0 2px 8px rgba(45, 90, 45, 0.1) !important;
+    }
+
+    #translation-box-${index} {
+      background: linear-gradient(145deg, #f8f8f8 0%, #f0f0f0 100%) !important;
+      border: 2px solid #2d5a2d !important;
+      border-radius: 15px !important;
+      padding: 1.5rem !important;
+      margin-top: 1.5rem !important;
+    }
+
+    #translation-box-${index} h4 {
+      color: #2d5a2d !important;
+      font-size: 1.3rem !important;
+      margin-bottom: 1rem !important;
+    }
+
+    #translation-box-${index} textarea {
+      border: 2px solid #e8f5e8 !important;
+      border-radius: 10px !important;
+      background: white !important;
+      color: #333 !important;
+      font-family: inherit !important;
+      line-height: 1.6 !important;
+    }
+
+    footer {
+      background: linear-gradient(135deg, #1a1a1a 0%, #000 100%);
+      color: white;
+      text-align: center;
+      padding: 2rem;
+      margin-top: 3rem;
+      box-shadow: 0 -4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    @media (max-width: 768px) {
+      nav {
+        flex-direction: column;
+        padding: 1rem;
+      }
+      
+      nav ul {
+        margin-top: 1rem;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      
+      main {
+        padding: 1rem;
+      }
+      
+      .story {
+        padding: 1.5rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <nav>
+      <h1>Kutubooks</h1>
+      <ul id="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="upload.html" id="submit-story-link" style="display:none;">Submit Story</a></li>
+        <li><a href="#" id="logout-btn">Logout</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <section>
+      <h2>Stories</h2>
+      <div id="stories-list">
+        <!-- Stories will load here -->
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Kutubooks</p>
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        window.location.href = 'login.html';
+      } else {
+        document.getElementById('submit-story-link').style.display = 'inline';
+        loadStories();
+      }
+    });
+
+    async function loadStories() {
+      const container = document.getElementById('stories-list');
+      container.textContent = 'Loading stories...';
+      try {
+        const res = await fetch('/stories', {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        });
+
+        if (res.status === 401) {
+          alert('Session expired. Please login again.');
+          localStorage.clear();
+          window.location.href = 'login.html';
+          return;
+        }
+
+        const stories = await res.json();
+        container.innerHTML = '';
+
+        if (stories.length === 0) {
+          container.textContent = 'No stories found.';
+          return;
+        }
+
+        stories.forEach((story, index) => {
+          const div = document.createElement('div');
+          div.classList.add('story');
+          const isLongContent = story.content.length > 200;
+          const shortContent = story.content.substring(0, 200);
+          const currentUserId = localStorage.getItem('userId');
+          const isOwner = currentUserId && parseInt(currentUserId) === story.user_id;
+          
+          div.innerHTML = `
+            <h3>${story.title}</h3>
+            <p><strong style="color: #2d5a2d;">Language:</strong> <span style="color: #3d6b3d; font-weight: 500;">${story.language}</span></p>
+            <div id="content-container-${index}">
+              <p id="content-${index}" style="text-align: justify; line-height: 1.8;">${isLongContent ? shortContent + '...' : story.content}</p>
+              ${isLongContent ? `<button onclick="toggleReadMore(${index}, '${story.content.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, '\\n')}')" id="read-more-${index}" style="background: linear-gradient(45deg, #2d5a2d, #3d6b3d); color: white;">Read More</button>` : ''}
+            </div>
+
+            <div style="margin: 1.5rem 0; display: flex; gap: 0.8rem; flex-wrap: wrap; justify-content: center;">
+              <button onclick="likeStory(${story.id}, ${index})" style="background: linear-gradient(45deg, #4d7b4d, #5d8b5d); color: white;">❤️ Like (<span id="likes-${index}">0</span>)</button>
+              ${isOwner ? `<button onclick="editStory(${story.id}, '${story.title}', '${story.content.replace(/'/g, "\\'").replace(/"/g, '\\"')}', '${story.language}', ${index})" style="background: linear-gradient(45deg, #2d5a2d, #3d6b3d); color: white;">Edit</button>` : ''}
+              ${isOwner ? `<button onclick="deleteStory(${story.id}, ${index})" style="background: linear-gradient(45deg, #1a1a1a, #333); color: white;">Delete</button>` : ''}
+            </div>
+            
+            <div style="margin: 1.5rem 0; text-align: center;">
+              <input type="text" id="comment-${index}" placeholder="Share your thoughts..." style="width: 70%; margin-right: 0.5rem;">
+              <button onclick="addComment(${story.id}, ${index})" style="background: linear-gradient(45deg, #2d5a2d, #3d6b3d); color: white;">Comment</button>
+            </div>
+            
+            <div id="comments-${index}" style="margin-top: 1.5rem; text-align: left;"></div>
+
+            <div style="text-align: center; margin: 1.5rem 0; padding: 1rem; background: rgba(45, 90, 45, 0.05); border-radius: 10px;">
+              <select id="lang-select-${index}" style="margin-right: 0.5rem;">
+                <option value="" disabled selected>Select target language</option>
+                <option value="en">English</option>
+                <option value="fr">French</option>
+                <option value="rw">Kinyarwanda</option>
+              </select>
+              <button onclick="translateStory(${index}, ${story.id})" style="background: linear-gradient(45deg, #2d5a2d, #3d6b3d); color: white;">Translate</button>
+            </div>
+            
+            <div id="translation-box-${index}" style="display: none;">
+              <h4>Translation:</h4>
+              <textarea id="translated-${index}" readonly style="width: 100%; min-height: 120px; padding: 1rem; resize: vertical;"></textarea>
+            </div>
+          `;
+          
+          // Store full content for translation
+          div.setAttribute('data-full-content', story.content);
+          container.appendChild(div);
+          
+          // Load likes and comments for each story
+          loadLikes(story.id, index);
+          loadComments(story.id, index);
+        });
+      } catch (err) {
+        console.error(err);
+        container.textContent = 'Failed to load stories.';
+      }
+    }
+
+    // Toggle Read More functionality
+    function toggleReadMore(index, fullContent) {
+      const contentEl = document.getElementById(`content-${index}`);
+      const buttonEl = document.getElementById(`read-more-${index}`);
+      
+      if (buttonEl.textContent === 'Read More') {
+        contentEl.textContent = fullContent;
+        buttonEl.textContent = 'Read Less';
+      } else {
+        contentEl.textContent = fullContent.substring(0, 200) + '...';
+        buttonEl.textContent = 'Read More';
+      }
+    }
+
+    async function translateStory(index, storyId) {
+      const select = document.getElementById(`lang-select-${index}`);
+      const targetLang = select.value;
+      if (!targetLang) return alert('Please select a language');
+
+      const translatedEl = document.getElementById(`translated-${index}`);
+      const translationBox = document.getElementById(`translation-box-${index}`);
+      
+      // Get full content from the story div
+      const storyDiv = document.querySelector(`[data-full-content]`);
+      const fullContent = storyDiv ? storyDiv.getAttribute('data-full-content') : '';
+      
+      translationBox.style.display = 'block';
+      translatedEl.value = 'Translating...';
+
+      try {
+        // Use first 1000 characters for translation
+        const text = fullContent.substring(0, 1000).replace(/[^\w\s.,!?]/gi, ''); // Clean text
+        const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|${targetLang}`;
+        
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.responseData && data.responseData.translatedText) {
+          translatedEl.value = data.responseData.translatedText;
+        } else {
+          throw new Error('No translation data received');
+        }
+      } catch (error) {
+        console.error('Translation error:', error);
+        const langNames = {
+          'en': 'English',
+          'fr': 'French', 
+          'rw': 'Kinyarwanda'
+        };
+        translatedEl.value = `Translation to ${langNames[targetLang]} failed. Error: ${error.message}`;
+      }
+    }
+
+    // Edit story function
+    async function editStory(id, title, content, language, index) {
+      const newTitle = prompt('Edit title:', title);
+      const newContent = prompt('Edit content:', content);
+      const newLanguage = prompt('Edit language:', language);
+      
+      if (newTitle && newContent && newLanguage) {
+        try {
+          const res = await fetch(`/stories/${id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({
+              title: newTitle,
+              content: newContent,
+              type: 'write',
+              language: newLanguage
+            })
+          });
+          
+          const data = await res.json();
+          if (res.ok) {
+            alert('Story updated successfully!');
+            loadStories(); // Reload stories
+          } else {
+            alert(data.error || 'Failed to update story');
+          }
+        } catch (error) {
+          alert('Error updating story: ' + error.message);
+        }
+      }
+    }
+
+    // Delete story function
+    async function deleteStory(id, index) {
+      if (confirm('Are you sure you want to delete this story?')) {
+        try {
+          const res = await fetch(`/stories/${id}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          });
+          
+          const data = await res.json();
+          if (res.ok) {
+            alert('Story deleted successfully!');
+            loadStories(); // Reload stories
+          } else {
+            alert(data.error || 'Failed to delete story');
+          }
+        } catch (error) {
+          alert('Error deleting story: ' + error.message);
+        }
+      }
+    }
+
+    // Load likes for a story
+    async function loadLikes(storyId, index) {
+      try {
+        const res = await fetch(`/stories/${storyId}/likes`);
+        const data = await res.json();
+        document.getElementById(`likes-${index}`).textContent = data.likes_count;
+      } catch (error) {
+        console.error('Error loading likes:', error);
+      }
+    }
+
+    // Like a story
+    async function likeStory(storyId, index) {
+      const userId = localStorage.getItem('userId');
+      if (!userId) {
+        alert('Please login to like stories');
+        return;
+      }
+
+      try {
+        const res = await fetch('/likes', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ user_id: userId, story_id: storyId })
+        });
+
+        if (res.ok) {
+          loadLikes(storyId, index); // Reload likes count
+        } else {
+          const data = await res.json();
+          alert(data.error || 'Failed to like story');
+        }
+      } catch (error) {
+        console.error('Error liking story:', error);
+      }
+    }
+
+    // Load comments for a story
+    async function loadComments(storyId, index) {
+      try {
+        const res = await fetch(`/stories/${storyId}/comments`);
+        const comments = await res.json();
+        const container = document.getElementById(`comments-${index}`);
+        
+        container.innerHTML = '<h4>Comments:</h4>';
+        comments.forEach(comment => {
+          const div = document.createElement('div');
+          div.style.cssText = 'background: #f8f9fa; padding: 0.5rem; margin: 0.5rem 0; border-radius: 3px; border-left: 3px solid #007bff;';
+          div.innerHTML = `<strong>${comment.username}:</strong> ${comment.content}`;
+          container.appendChild(div);
+        });
+      } catch (error) {
+        console.error('Error loading comments:', error);
+      }
+    }
+
+    // Add a comment
+    async function addComment(storyId, index) {
+      const userId = localStorage.getItem('userId');
+      const commentInput = document.getElementById(`comment-${index}`);
+      const content = commentInput.value.trim();
+      
+      if (!userId) {
+        alert('Please login to comment');
+        return;
+      }
+      
+      if (!content) {
+        alert('Please enter a comment');
+        return;
+      }
+
+      try {
+        const res = await fetch('/comments', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ user_id: userId, story_id: storyId, content })
+        });
+
+        if (res.ok) {
+          commentInput.value = ''; // Clear input
+          loadComments(storyId, index); // Reload comments
+        } else {
+          const data = await res.json();
+          alert(data.error || 'Failed to add comment');
+        }
+      } catch (error) {
+        console.error('Error adding comment:', error);
+      }
+    }
+
+    document.getElementById('logout-btn').addEventListener('click', () => {
+      localStorage.clear();
+      window.location.href = 'index.html';
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  kutubooks:
+    build: ./kutubooks-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - JWT_SECRET=kutubooks_jwt_secret_2025
+      - JWT_EXPIRES_IN=24h
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped

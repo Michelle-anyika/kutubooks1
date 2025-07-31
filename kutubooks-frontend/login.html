@@ -162,7 +162,6 @@
     <p>&copy; 2025 Kutubooks</p>
   </footer>
 
-  <script src="app.js"></script>
   <script>
   document.getElementById('login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -182,6 +181,7 @@
       if (res.ok) {
         localStorage.setItem('token', data.token);
         localStorage.setItem('email', email);
+        localStorage.setItem('userId', data.userId);
         window.location.href = 'stories.html';  // Redirect to stories page on success
       } else {
         document.getElementById('login-message').textContent = data.error || 'Login failed';

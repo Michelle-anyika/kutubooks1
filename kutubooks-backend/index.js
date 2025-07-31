@@ -1,30 +1,71 @@
 const express = require('express');
-const mysql = require('mysql2');
+const sqlite3 = require('sqlite3').verbose();
 const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const path = require('path');
 require('dotenv').config();
 const authenticateToken = require('./authenticateToken');
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: '10mb' }));
+app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
 
-// 1. CONNECT TO DATABASE
-const db = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: 'kutupass', // or your MySQL password
-  database: 'kutubooks'
+// Enable CORS
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  next();
 });
 
-db.connect((err) => {
+// Serve static files from current directory
+app.use(express.static(__dirname));
+
+// 1. CONNECT TO DATABASE
+const db = new sqlite3.Database('./kutubooks.db', (err) => {
   if (err) {
-    console.error('DB connection failed:', err.stack);
+    console.error('DB connection failed:', err.message);
     return;
   }
-  console.log('Connected to MySQL database ');
+  console.log('Connected to SQLite database');
+  
+  // Create tables
+  db.serialize(() => {
+    db.run(`CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      email TEXT UNIQUE NOT NULL,
+      password TEXT NOT NULL
+    )`);
+    
+    db.run(`CREATE TABLE IF NOT EXISTS stories (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      content TEXT NOT NULL,
+      type TEXT DEFAULT 'write',
+      language TEXT,
+      user_id INTEGER,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    
+    db.run(`CREATE TABLE IF NOT EXISTS likes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER,
+      story_id INTEGER,
+      UNIQUE(user_id, story_id)
+    )`);
+    
+    db.run(`CREATE TABLE IF NOT EXISTS comments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER,
+      story_id INTEGER,
+      content TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+  });
 });
 
 // User registration with hashed password
@@ -37,37 +78,34 @@ app.post('/register', async (req, res) => {
 
   try {
     // Check if user exists
-    const [existingUser] = await new Promise((resolve, reject) => {
-      db.query('SELECT * FROM users WHERE email = ?', [email], (err, results) => {
-        if (err) reject(err);
-        else resolve(results);
-      });
-    });
-
-    if (existingUser) {
-      return res.status(409).json({ error: 'Email already registered' });
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Insert user with hashed password
-    db.query(
-      'INSERT INTO users (name, email, password) VALUES (?, ?, ?)',
-      [name, email, hashedPassword],
-      (err, result) => {
-        if (err) return res.status(500).json({ error: 'Database error' });
-
-        // Create JWT token
-        const token = jwt.sign(
-          { userId: result.insertId, email },
-          process.env.JWT_SECRET,
-          { expiresIn: process.env.JWT_EXPIRES_IN }
-        );
-
-        res.status(201).json({ message: 'User registered', token });
+    db.get('SELECT * FROM users WHERE email = ?', [email], async (err, existingUser) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+      
+      if (existingUser) {
+        return res.status(409).json({ error: 'Email already registered' });
       }
-    );
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Insert user with hashed password
+      db.run(
+        'INSERT INTO users (name, email, password) VALUES (?, ?, ?)',
+        [name, email, hashedPassword],
+        function(err) {
+          if (err) return res.status(500).json({ error: 'Database error' });
+
+          // Create JWT token
+          const token = jwt.sign(
+            { userId: this.lastID, email },
+            process.env.JWT_SECRET,
+            { expiresIn: process.env.JWT_EXPIRES_IN }
+          );
+
+          res.status(201).json({ message: 'User registered', token, userId: this.lastID });
+        }
+      );
+    });
   } catch (error) {
     res.status(500).json({ error: 'Server error' });
   }
@@ -80,14 +118,12 @@ app.post('/login', (req, res) => {
   }
 
   // Find user by email
-  db.query('SELECT * FROM users WHERE email = ?', [email], async (err, results) => {
+  db.get('SELECT * FROM users WHERE email = ?', [email], async (err, user) => {
     if (err) return res.status(500).json({ error: 'Server error' });
 
-    if (results.length === 0) {
+    if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
-
-    const user = results[0];
 
     // Compare passwords
     const isMatch = await bcrypt.compare(password, user.password);
@@ -103,14 +139,14 @@ app.post('/login', (req, res) => {
       { expiresIn: process.env.JWT_EXPIRES_IN }
     );
 
-    res.json({ message: 'Login successful', token });
+    res.json({ message: 'Login successful', token, userId: user.id });
   });
 });
 
 
 //  4. GET ALL USERS
 app.get('/users', (req, res) => {
-  db.query('SELECT id, name, email FROM users', (err, results) => {
+  db.all('SELECT id, name, email FROM users', (err, results) => {
     if (err) return res.status(500).json({ error: 'Server error' });
     res.json(results);
   });
@@ -120,7 +156,7 @@ app.get('/users', (req, res) => {
 app.put('/users/:id', authenticateToken, (req, res) => {
   const { name, email } = req.body;
   const sql = 'UPDATE users SET name = ?, email = ? WHERE id = ?';
-  db.query(sql, [name, email, req.params.id], (err, result) => {
+  db.run(sql, [name, email, req.params.id], (err) => {
     if (err) return res.status(500).json({ error: 'Server error' });
     res.json({ message: 'User updated' });
   });
@@ -129,7 +165,7 @@ app.put('/users/:id', authenticateToken, (req, res) => {
 //  6. DELETE USER
 app.delete('/users/:id', authenticateToken, (req, res) => {
   const sql = 'DELETE FROM users WHERE id = ?';
-  db.query(sql, [req.params.id], (err, result) => {
+  db.run(sql, [req.params.id], (err) => {
     if (err) return res.status(500).json({ error: 'Server error' });
     res.json({ message: 'User deleted' });
   });
@@ -138,7 +174,7 @@ app.delete('/users/:id', authenticateToken, (req, res) => {
 // Get all stories
 app.get('/stories', (req, res) => {
   const sql = 'SELECT * FROM stories';
-  db.query(sql, (err, results) => {
+  db.all(sql, (err, results) => {
     if (err) return res.status(500).json({ error: 'Server error' });
     res.json(results);
   });
@@ -147,39 +183,59 @@ app.get('/stories', (req, res) => {
 // Get a single story by ID
 app.get('/stories/:id', (req, res) => {
   const sql = 'SELECT * FROM stories WHERE id = ?';
-  db.query(sql, [req.params.id], (err, results) => {
+  db.get(sql, [req.params.id], (err, result) => {
     if (err) return res.status(500).json({ error: 'Server error' });
-    if (results.length === 0) return res.status(404).json({ error: 'Story not found' });
-    res.json(results[0]);
+    if (!result) return res.status(404).json({ error: 'Story not found' });
+    res.json(result);
   });
 });
 
 // Create a new story
-app.post('/stories', authenticateToken, (req, res) => {
+app.post('/stories', (req, res) => {
   const { title, content, type, language, user_id } = req.body;
   const sql = 'INSERT INTO stories (title, content, type, language, user_id) VALUES (?, ?, ?, ?, ?)';
-  db.query(sql, [title, content, type || 'write', language, user_id], (err, result) => {
+  db.run(sql, [title, content, type || 'write', language, user_id], function(err) {
     if (err) return res.status(500).json({ error: 'Server error' });
-    res.status(201).json({ message: 'Story created', storyId: result.insertId });
+    res.status(201).json({ message: 'Story created', storyId: this.lastID });
   });
 });
 
 // Update a story by ID
 app.put('/stories/:id', authenticateToken, (req, res) => {
   const { title, content, type, language } = req.body;
-  const sql = 'UPDATE stories SET title = ?, content = ?, type = ?, language = ? WHERE id = ?';
-  db.query(sql, [title, content, type, language, req.params.id], (err, result) => {
+  const userId = req.user.userId;
+  
+  // First check if story belongs to user
+  db.get('SELECT user_id FROM stories WHERE id = ?', [req.params.id], (err, story) => {
     if (err) return res.status(500).json({ error: 'Server error' });
-    res.json({ message: 'Story updated' });
+    if (!story) return res.status(404).json({ error: 'Story not found' });
+    if (story.user_id !== userId) return res.status(403).json({ error: 'You can only edit your own stories' });
+    
+    // Update story if user owns it
+    const sql = 'UPDATE stories SET title = ?, content = ?, type = ?, language = ? WHERE id = ?';
+    db.run(sql, [title, content, type, language, req.params.id], (err) => {
+      if (err) return res.status(500).json({ error: 'Server error' });
+      res.json({ message: 'Story updated' });
+    });
   });
 });
 
 // Delete a story by ID
 app.delete('/stories/:id', authenticateToken, (req, res) => {
-  const sql = 'DELETE FROM stories WHERE id = ?';
-  db.query(sql, [req.params.id], (err, result) => {
+  const userId = req.user.userId;
+  
+  // First check if story belongs to user
+  db.get('SELECT user_id FROM stories WHERE id = ?', [req.params.id], (err, story) => {
     if (err) return res.status(500).json({ error: 'Server error' });
-    res.json({ message: 'Story deleted' });
+    if (!story) return res.status(404).json({ error: 'Story not found' });
+    if (story.user_id !== userId) return res.status(403).json({ error: 'You can only delete your own stories' });
+    
+    // Delete story if user owns it
+    const sql = 'DELETE FROM stories WHERE id = ?';
+    db.run(sql, [req.params.id], (err) => {
+      if (err) return res.status(500).json({ error: 'Server error' });
+      res.json({ message: 'Story deleted' });
+    });
   });
 });
 
@@ -187,9 +243,9 @@ app.delete('/stories/:id', authenticateToken, (req, res) => {
 app.post('/likes', (req, res) => {
   const { user_id, story_id } = req.body;
   const sql = 'INSERT INTO likes (user_id, story_id) VALUES (?, ?)';
-  db.query(sql, [user_id, story_id], (err, result) => {
+  db.run(sql, [user_id, story_id], (err) => {
     if (err) {
-      if (err.code === 'ER_DUP_ENTRY') {
+      if (err.code === 'SQLITE_CONSTRAINT') {
         return res.status(400).json({ error: 'User already liked this story' });
       }
       return res.status(500).json({ error: 'Server error' });
@@ -202,9 +258,9 @@ app.post('/likes', (req, res) => {
 app.delete('/likes', (req, res) => {
   const { user_id, story_id } = req.body;
   const sql = 'DELETE FROM likes WHERE user_id = ? AND story_id = ?';
-  db.query(sql, [user_id, story_id], (err, result) => {
+  db.run(sql, [user_id, story_id], function(err) {
     if (err) return res.status(500).json({ error: 'Server error' });
-    if (result.affectedRows === 0) {
+    if (this.changes === 0) {
       return res.status(404).json({ error: 'Like not found' });
     }
     res.json({ message: 'Like removed' });
@@ -215,9 +271,9 @@ app.delete('/likes', (req, res) => {
 app.get('/stories/:id/likes', (req, res) => {
   const storyId = req.params.id;
   const sql = 'SELECT COUNT(*) AS likes_count FROM likes WHERE story_id = ?';
-  db.query(sql, [storyId], (err, results) => {
+  db.get(sql, [storyId], (err, result) => {
     if (err) return res.status(500).json({ error: 'Server error' });
-    res.json({ story_id: storyId, likes_count: results[0].likes_count });
+    res.json({ story_id: storyId, likes_count: result.likes_count });
   });
 });
 
@@ -225,9 +281,9 @@ app.get('/stories/:id/likes', (req, res) => {
 app.get('/likes/check', (req, res) => {
   const { user_id, story_id } = req.query;
   const sql = 'SELECT * FROM likes WHERE user_id = ? AND story_id = ?';
-  db.query(sql, [user_id, story_id], (err, results) => {
+  db.get(sql, [user_id, story_id], (err, result) => {
     if (err) return res.status(500).json({ error: 'Server error' });
-    res.json({ liked: results.length > 0 });
+    res.json({ liked: !!result });
   });
 });
 
@@ -238,12 +294,12 @@ app.post('/comments', (req, res) => {
     return res.status(400).json({ error: 'Missing required fields' });
   }
   const sql = 'INSERT INTO comments (user_id, story_id, content) VALUES (?, ?, ?)';
-  db.query(sql, [user_id, story_id, content], (err, result) => {
+  db.run(sql, [user_id, story_id, content], function(err) {
     if (err) {
       console.error('Error inserting comment:', err);
       return res.status(500).json({ error: 'Server error' });
     }
-    res.status(201).json({ message: 'Comment created', commentId: result.insertId });
+    res.status(201).json({ message: 'Comment created', commentId: this.lastID });
   });
 });
 
@@ -257,7 +313,7 @@ app.get('/stories/:storyId/comments', (req, res) => {
     WHERE comments.story_id = ?
     ORDER BY comments.created_at DESC
   `;
-  db.query(sql, [storyId], (err, results) => {
+  db.all(sql, [storyId], (err, results) => {
     if (err) {
       console.error('Error fetching comments:', err);
       return res.status(500).json({ error: 'Server error' });
@@ -274,12 +330,12 @@ app.put('/comments/:id', (req, res) => {
     return res.status(400).json({ error: 'Content is required' });
   }
   const sql = 'UPDATE comments SET content = ? WHERE id = ?';
-  db.query(sql, [content, id], (err, result) => {
+  db.run(sql, [content, id], function(err) {
     if (err) {
       console.error('Error updating comment:', err);
       return res.status(500).json({ error: 'Server error' });
     }
-    if (result.affectedRows === 0) {
+    if (this.changes === 0) {
       return res.status(404).json({ error: 'Comment not found' });
     }
     res.json({ message: 'Comment updated' });
@@ -290,21 +346,32 @@ app.put('/comments/:id', (req, res) => {
 app.delete('/comments/:id', (req, res) => {
   const { id } = req.params;
   const sql = 'DELETE FROM comments WHERE id = ?';
-  db.query(sql, [id], (err, result) => {
+  db.run(sql, [id], function(err) {
     if (err) {
       console.error('Error deleting comment:', err);
       return res.status(500).json({ error: 'Server error' });
     }
-    if (result.affectedRows === 0) {
+    if (this.changes === 0) {
       return res.status(404).json({ error: 'Comment not found' });
     }
     res.json({ message: 'Comment deleted' });
   });
 });
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).send('healthy');
+});
+
+// Serve main HTML file
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 //  7. START SERVER
-app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Server running on http://0.0.0.0:${port}`);
+  console.log(`Frontend available at http://0.0.0.0:${port}`);
 });
 
 

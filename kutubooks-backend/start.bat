@@ -1,0 +1,3 @@
+@echo off
+echo Starting Kutubooks Application...
+node index.js

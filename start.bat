@@ -1,0 +1,6 @@
+@echo off
+cd kutubooks-backend
+echo Installing dependencies...
+npm install
+echo Starting server...
+node index.js

@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Submit Story - Kutubooks</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <style>
+    /* Global Reset and Base */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: #f5f5f5;
+      color: #222;
+      line-height: 1.6;
+    }
+
+    header {
+      background: #1b1b1b;
+      color: #fff;
+      padding: 1rem 2rem;
+    }
+
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    nav h1 {
+      font-size: 1.6rem;
+      color: #a3ff2f;
+    }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: 1rem;
+    }
+
+    nav ul li a {
+      color: #fff;
+      text-decoration: none;
+      padding: 0.5rem 0.8rem;
+      border-radius: 5px;
+      transition: background 0.3s;
+    }
+
+    nav ul li a:hover {
+      background: #a3ff2f;
+      color: #000;
+    }
+
+    main {
+      padding: 2rem 1rem;
+      max-width: 600px;
+      margin: auto;
+    }
+
+    .form-section {
+      background: #fff;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-section h2 {
+      color: #1b1b1b;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    label {
+      font-weight: bold;
+    }
+
+    input, textarea, select {
+      padding: 0.8rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+
+    button {
+      background: #1b1b1b;
+      color: #a3ff2f;
+      padding: 0.8rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background: #000;
+      color: #fff;
+    }
+
+    .message {
+      text-align: center;
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+
+    footer {
+      text-align: center;
+      padding: 1rem;
+      background: #1b1b1b;
+      color: #ccc;
+      margin-top: 2rem;
+    }
+
+    @media (max-width: 600px) {
+      nav {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      nav ul {
+        flex-direction: column;
+        width: 100%;
+      }
+
+      nav ul li {
+        width: 100%;
+      }
+
+      nav ul li a {
+        display: block;
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <nav>
+      <h1>Kutubooks</h1>
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="stories.html">Browse Stories</a></li>
+        <li><a href="#" id="logout-btn">Logout</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <section class="form-section">
+      <h2>Submit a Story</h2>
+      <form id="story-form">
+        <label>Title</label>
+        <input type="text" id="title" required />
+
+        <label>Type</label>
+        <select id="type" required>
+          <option value="write">Write</option>
+          <option value="upload">Upload</option>
+        </select>
+
+        <div id="write-content">
+          <label>Content</label>
+          <textarea id="content" rows="8"></textarea>
+        </div>
+
+        <div id="upload-content" style="display: none;">
+          <label>Upload File (.txt or .pdf)</label>
+          <input type="file" id="file-upload" accept=".txt,.pdf" />
+        </div>
+
+        <label>Language</label>
+        <input type="text" id="language" placeholder="e.g. English, Swahili" required />
+
+        <button type="submit">Submit</button>
+      </form>
+      <p id="story-message" class="message"></p>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Kutubooks</p>
+  </footer>
+
+  <script>
+    // Redirect if not logged in
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!localStorage.getItem('token')) {
+        window.location.href = 'login.html';
+      }
+
+      // Show or hide write/upload fields
+      const typeSelect = document.getElementById('type');
+      const writeSection = document.getElementById('write-content');
+      const uploadSection = document.getElementById('upload-content');
+
+      typeSelect.addEventListener('change', () => {
+        const selected = typeSelect.value;
+        writeSection.style.display = selected === 'write' ? 'block' : 'none';
+        uploadSection.style.display = selected === 'upload' ? 'block' : 'none';
+      });
+    });
+
+    // Submit form handler
+    document.getElementById('story-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const title = document.getElementById('title').value.trim();
+      const type = document.getElementById('type').value;
+      const language = document.getElementById('language').value.trim();
+      const userId = localStorage.getItem('userId');
+      const token = localStorage.getItem('token');
+
+      if (!title || !language) {
+        document.getElementById('story-message').textContent = 'Please fill title and language.';
+        return;
+      }
+
+      let content = '';
+
+      if (type === 'write') {
+        content = document.getElementById('content').value.trim();
+        if (!content) {
+          document.getElementById('story-message').textContent = 'Please enter story content.';
+          return;
+        }
+      } else if (type === 'upload') {
+        const fileInput = document.getElementById('file-upload');
+        const file = fileInput.files[0];
+        
+        if (!file) {
+          document.getElementById('story-message').textContent = 'Please select a file.';
+          return;
+        }
+
+        // Check file type
+        const fileName = file.name.toLowerCase();
+        if (!fileName.endsWith('.txt') && !fileName.endsWith('.pdf')) {
+          document.getElementById('story-message').textContent = 'Please select a .txt or .pdf file only.';
+          return;
+        }
+
+        // Check file size (limit to 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          document.getElementById('story-message').textContent = 'File too large. Please select a file smaller than 5MB.';
+          return;
+        }
+
+        try {
+          if (fileName.endsWith('.pdf')) {
+            content = await extractTextFromPDF(file);
+          } else {
+            content = await readTextFromFile(file);
+          }
+          
+          // Limit content length
+          if (content.length > 20000) {
+            content = content.substring(0, 20000) + '\n\n[Content truncated - file was too long]';
+          }
+        } catch (error) {
+          document.getElementById('story-message').textContent = 'Error reading file: ' + error.message;
+          return;
+        }
+      }
+
+      document.getElementById('story-message').textContent = 'Submitting...';
+
+      try {
+        const res = await fetch('/stories', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            title: title,
+            content: content,
+            type: type,
+            language: language,
+            user_id: userId ? parseInt(userId) : 1
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          document.getElementById('story-message').textContent = 'Story submitted successfully!';
+          document.getElementById('story-message').style.color = 'green';
+          document.getElementById('story-form').reset();
+        } else {
+          const errorText = await res.text();
+          document.getElementById('story-message').textContent = 'Failed to submit story: ' + errorText;
+          document.getElementById('story-message').style.color = 'red';
+        }
+      } catch (error) {
+        document.getElementById('story-message').textContent = 'Network error: ' + error.message;
+        document.getElementById('story-message').style.color = 'red';
+      }
+    });
+
+    // Helper function to read text from uploaded file
+    function readTextFromFile(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+
+        reader.onload = () => {
+          resolve(reader.result);
+        };
+
+        reader.onerror = () => {
+          reject('Failed to read file.');
+        };
+
+        reader.readAsText(file);
+      });
+    }
+
+    // Helper function to extract text from PDF
+    async function extractTextFromPDF(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        
+        reader.onload = async function() {
+          try {
+            const typedArray = new Uint8Array(this.result);
+            const pdf = await pdfjsLib.getDocument(typedArray).promise;
+            let fullText = '';
+            
+            // Extract text from all pages (limit to first 10 pages)
+            const numPages = Math.min(pdf.numPages, 10);
+            
+            for (let i = 1; i <= numPages; i++) {
+              const page = await pdf.getPage(i);
+              const textContent = await page.getTextContent();
+              const pageText = textContent.items.map(item => item.str).join(' ');
+              fullText += pageText + '\n\n';
+            }
+            
+            if (fullText.trim() === '') {
+              reject(new Error('No text found in PDF'));
+            } else {
+              resolve(fullText.trim());
+            }
+          } catch (error) {
+            reject(new Error('Failed to extract text from PDF: ' + error.message));
+          }
+        };
+        
+        reader.onerror = () => {
+          reject(new Error('Failed to read PDF file'));
+        };
+        
+        reader.readAsArrayBuffer(file);
+      });
+    }
+
+    // Logout
+    document.getElementById('logout-btn').addEventListener('click', () => {
+      localStorage.clear();
+      window.location.href = 'index.html';
+    });
+  </script>
+</body>
+</html>
