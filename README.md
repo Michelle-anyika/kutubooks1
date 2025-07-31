@@ -72,9 +72,9 @@ sudo systemctl restart nginx
 sudo systemctl enable nginx
 
 #### 4. Access Points
--**Load Balancer:** http://lb01
--**Web01 Direct:** http://web01:8080
--**Web02 Direct:** http://web02:8080
+- **Load Balancer:** http://lb01
+- **Web01 Direct:** http://web01:8080
+- **Web02 Direct:** http://web02:8080
 
 ### Testing Load Balancer
 # Test multiple requests to see distribution
@@ -82,21 +82,21 @@ for i in {1..10}; do curl -s http://lb01 | grep -o "Server.*"; done
 
 ## Security Features
 
-- JWT authentication for protected routes but restricted to some parts.
-- User ownership verification for CRUD operations
-- Input validation and sanitization
-- Environment variables for sensitive data
+ JWT authentication for protected routes but restricted to some parts.
+ User ownership verification for CRUD operations
+ Input validation and sanitization
+ Environment variables for sensitive data
 
 ## Technology Stack
 
-- **Backend**: Node.js, Express.js, SQLite
-- **Frontend**: HTML5, CSS3, JavaScript
-- **Authentication**: JWT
-- **Translation**: MyMemory API
-- **File Processing**: PDF.js for PDF text extraction
+ **Backend**: Node.js, Express.js, SQLite
+ **Frontend**: HTML5, CSS3, JavaScript
+ **Authentication**: JWT
+ **Translation**: MyMemory API
+ **File Processing**: PDF.js for PDF text extraction
 
 ## Credits
 
-- MyMemory Translation API by Translated
-- PDF.js by Mozilla
-- SQLite Database Engine
+ MyMemory Translation API by Translated
+ PDF.js by Mozilla
+ SQLite Database Engine
