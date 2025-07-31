@@ -72,9 +72,9 @@ sudo systemctl restart nginx
 sudo systemctl enable nginx
 
 #### 4. Access Points
-**Load Balancer:** http://lb01
-**Web01 Direct:** http://web01:8080
-**Web02 Direct:** http://web02:8080
+-**Load Balancer:** http://lb01
+-**Web01 Direct:** http://web01:8080
+-**Web02 Direct:** http://web02:8080
 
 ### Testing Load Balancer
 # Test multiple requests to see distribution
